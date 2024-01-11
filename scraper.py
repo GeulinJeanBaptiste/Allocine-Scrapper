@@ -371,18 +371,21 @@ def load_existing_data(filename="data.json") -> dict:
 
 
 def update_existing_data(existing_data: dict, new_films: list) -> dict:
-    new_films = [new_film for new_film in new_films if new_film['synopsis'] not in [
-        film['synopsis'] for film in existing_data['data']]]
+   new_films = [new_film for new_film in new_films if new_film['synopsis'] not in [
+       film['synopsis'] for film in existing_data['data']]]
 
-    for film in existing_data['data']:
-        if all(value is None or (isinstance(value, list) and len(value) == 0) for value in film.values()):
-            existing_data['data'].remove(film)
-            existing_data['data_number'] -= 1
+   for film in existing_data['data']:
+       if all(value is None or (isinstance(value, list) and len(value) == 0) for value in film.values()):
+           existing_data['data'].remove(film)
+           existing_data['data_number'] -= 1
 
-    existing_data['data'].extend(new_films)
-    existing_data['data_number'] = len(existing_data['data'])
+   titles = [film['title'] for film in existing_data['data']]
+   new_films = [film for film in new_films if film['title'] not in titles]
 
-    return existing_data
+   existing_data['data'].extend(new_films)
+   existing_data['data_number'] = len(existing_data['data'])
+
+   return existing_data
 
 
 def clean_data():
@@ -556,12 +559,12 @@ def main():
                 trier_series_films(data)
                 return
 
-            elif command in ['meilleur', 'action', 'animation', 'aventure', 'biopic', 'comedie', 'comedie-dramatique', 'drame', 'epouvante-horreur', 'espionnage', 'famille', 'fantastique', 'historique', 'judiciaire', 'policier', 'romance', 'science-fiction', 'thriller']:
+            elif command in ['action', 'animation', 'aventure', 'biopic', 'comedie', 'comedie-dramatique', 'drame', 'epouvante-horreur', 'espionnage', 'famille', 'fantastique', 'historique', 'judiciaire', 'policier', 'romance', 'science-fiction', 'thriller']:
                 page_url = parser['Urls'][f'page_url_serie_{command}']
                 max_page = int(parser['Urls'][f'page_number_serie_{command}'])
                 scrape_page(parser, page_url, max_page, 'serie')
 
-            elif command in ['cinema', 'action', 'animation', 'aventure', 'biopic', 'comedie', 'comedie-dramatique',
+            elif command in ['action', 'animation', 'aventure', 'biopic', 'comedie', 'comedie-dramatique',
                              'drame', 'epouvante-horreur', 'famille', 'fantastique', 'guerre', 'historique',
                              'musical', 'policier', 'romance', 'science-fiction', 'thriller', 'western']:
                 page_url = parser['Urls'][f'page_url_{command}']
@@ -643,7 +646,7 @@ def main():
                         pass
 
             elif command == 'film-all':
-                genres_to_scrape = ['cinema', 'action', 'animation', 'aventure', 'biopic', 'comedie', 'comedie-dramatique',
+                genres_to_scrape = ['action', 'animation', 'aventure', 'biopic', 'comedie', 'comedie-dramatique',
                                     'drame', 'epouvante-horreur', 'famille', 'fantastique', 'guerre', 'historique',
                                     'musical', 'policier', 'romance', 'science-fiction', 'thriller', 'western']
 
@@ -662,7 +665,7 @@ def main():
             elif command == 'all':
                 try:
                     print("Executing film-all command...")
-                    genres_to_scrape_film = ['cinema', 'action', 'animation', 'aventure',           'biopic', 'comedie', 'comedie-dramatique',
+                    genres_to_scrape_film = ['action', 'animation', 'aventure','biopic', 'comedie', 'comedie-dramatique',
                                             'drame', 'epouvante-horreur', 'famille', 'fantastique', 'guerre', 'historique',
                                             'musical', 'policier', 'romance', 'science-fiction', 'thriller', 'western']
 
