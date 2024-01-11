@@ -105,6 +105,13 @@ Pour exécuter ce projet dans un environnement virtuel, suivez ces étapes :
 
    Vous verrez le nom de votre environnement virtuel apparaître dans le terminal, indiquant qu'il est activé.
 
+3. **Désactiver l'environnement virtuel :**
+
+   - Pour Windows, macOS et Linux:
+
+      ```bash
+       deactivate
+      ```
 
 ## Installation les dépendances
 
