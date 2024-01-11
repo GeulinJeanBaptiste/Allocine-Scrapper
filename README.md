@@ -138,7 +138,7 @@ Le script utilise ChromeDriver pour automatiser le navigateur Chrome. Si vous ne
 
 ## Commandes
 
-⚠️ Par défaut le script crée un fichier data.json et un dossier Covers si il n'y en pas quand vous utiliser une commande pour scrap une page. ⚠️
+⚠️Par défaut le script crée un fichier data.json et un dossier Covers si il n'y en pas quand vous utiliser une commande pour scrap une page.⚠️
 
 Le script prend en charge plusieurs commandes pour différents types de scraping. Voici la liste des commandes disponibles :
 
