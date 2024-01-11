@@ -46,32 +46,31 @@ def scroll_to_bottom(driver):
     time.sleep(1)
 
 
-seen_titles = set()
-
 def download_and_save_image(url, title):
-  global seen_titles
-  clean_title = re.sub(r'\W+', '', title)
-  image_path = os.path.join("Covers", f"{clean_title}.jpg")
-  
-  if not os.path.exists("Covers"):
-      os.makedirs("Covers")
+ global seen_titles
+ clean_title = re.sub(r'\W+', '', title)
+ image_path = os.path.join("Covers", f"{clean_title}.jpg")
 
-  counter = 1
-  while os.path.isfile(image_path):
-      if title in seen_titles:
-          image_path = os.path.join("Covers", f"{clean_title}_{counter}.jpg")
-          counter += 1
-      else:
-          break
+ if not os.path.exists("Covers"):
+     os.makedirs("Covers")
 
-  response = requests.get(url)
-  if response.status_code == 200:
-      with open(image_path, 'wb') as f:
-          f.write(response.content)
-      print(f"Image téléchargée et enregistrée : {image_path}")
-      seen_titles.add(title)
-  else:
-      print(f"Échec du téléchargement de l'image pour {title}. Code de statut : {response.status_code}")
+ counter = 1
+ while os.path.isfile(image_path):
+     if title in seen_titles:
+         image_path = os.path.join("Covers", f"{clean_title}_{counter}.jpg")
+         counter += 1
+     else:
+         break
+
+ response = requests.get(url)
+ if response.status_code == 200:
+     with open(image_path, 'wb') as f:
+         f.write(response.content)
+     print(f"Image téléchargée et enregistrée : {image_path}")
+     seen_titles.add(title)
+ else:
+     print(f"Échec du téléchargement de l'image pour {title}. Code de statut : {response.status_code}")
+
 
 
 def url_to_parse(url="") -> BeautifulSoup:
