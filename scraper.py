@@ -421,80 +421,88 @@ def clean_alldata():
 
 
 def trier_series_films(data):
-   initial_covers_directory = 'Covers'
-   series_data = {"data_number": 0, "data": []}
-   films_data = {"data_number": 0, "data": []}
+    initial_covers_directory = 'Covers'
+    series_data = {"data_number": 0, "data": []}
+    films_data = {"data_number": 0, "data": []}
 
-   for item in data['data']:
-       if item['type'] == 'serie':
-           series_data['data'].append(item)
-       elif item['type'] == 'film':
-           films_data['data'].append(item)
+    for item in data['data']:
+        if item['type'] == 'serie':
+            series_data['data'].append(item)
+        elif item['type'] == 'film':
+            films_data['data'].append(item)
 
-   series_data['data_number'] = len(series_data['data'])
-   films_data['data_number'] = len(films_data['data'])
+    series_data['data_number'] = len(series_data['data'])
+    films_data['data_number'] = len(films_data['data'])
 
-   if not os.path.exists('Tri'):
-       os.makedirs('Tri')
+    if not os.path.exists('Tri'):
+        os.makedirs('Tri')
 
-   if not os.path.exists('Tri/series-films'):
-       os.makedirs('Tri/series-films')
+    if not os.path.exists('Tri/series-films'):
+        os.makedirs('Tri/series-films')
 
-   if not os.path.exists('Tri/series-films/cover_serie'):
-       os.makedirs('Tri/series-films/cover_serie')
-   if not os.path.exists('Tri/series-films/cover_film'):
-       os.makedirs('Tri/series-films/cover_film')
+    if not os.path.exists('Tri/series-films/cover_serie'):
+        os.makedirs('Tri/series-films/cover_serie')
+    if not os.path.exists('Tri/series-films/cover_film'):
+        os.makedirs('Tri/series-films/cover_film')
 
-   for i, item in enumerate(data['data']):
-       if 'image' in item:
-           cover_path = os.path.join(initial_covers_directory, os.path.basename(item['image']))
-           cover_type = 'cover_serie' if item['type'] == 'serie' else 'cover_film'
+    for i, item in enumerate(data['data']):
+        if 'image' in item:
+            cover_path = os.path.join(initial_covers_directory, os.path.basename(item['image']))
+            cover_type = 'cover_serie' if item['type'] == 'serie' else 'cover_film'
 
-           print(f"Déplacement de l'image {cover_path} vers Tri/series-films/{cover_type}...")
+            print(f"Déplacement de l'image {cover_path} vers Tri/series-films/{cover_type}...")
 
-           if os.path.exists(cover_path):
-               destination_directory = os.path.join('Tri/series-films', cover_type)
-               if not os.path.exists(destination_directory):
-                  os.makedirs(destination_directory)
+            if os.path.exists(cover_path):
+                destination_directory = os.path.join('Tri/series-films', cover_type)
+                if not os.path.exists(destination_directory):
+                    os.makedirs(destination_directory)
 
-               destination_path = os.path.join(destination_directory, os.path.basename(cover_path))
+                destination_path = os.path.join(destination_directory, os.path.basename(cover_path))
 
-               try:
-                  if os.path.exists(destination_path):
-                      os.remove(destination_path)
-                      print(f"Image existante supprimée à {destination_path}")
+                try:
+                    if os.path.exists(destination_path):
+                        os.remove(destination_path)
+                        print(f"Image existante supprimée à {destination_path}")
 
-                  shutil.move(cover_path, destination_path)
-                  print(f"Image déplacée avec succès à {destination_path}")
+                    shutil.move(cover_path, destination_path)
+                    print(f"Image déplacée avec succès à {destination_path}")
 
-                  
-                  data['data'][i]['image'] = os.path.join(destination_directory, os.path.basename(destination_path))
+                    # Met à jour l'URL dans data
+                    data['data'][i]['image'] = os.path.join(destination_directory, os.path.basename(destination_path))
 
-               except Exception as e:
-                  print(f"Erreur lors du déplacement de l'image : {e}")
-           else:
-               pass
+                except Exception as e:
+                    print(f"Erreur lors du déplacement de l'image : {e}")
+            else:
+                pass
 
-   covers_directory = initial_covers_directory
-   try:
-       for file_name in os.listdir(covers_directory):
-           file_path = os.path.join(covers_directory, file_name)
-           try:
-               if os.path.isfile(file_path):
-                  os.unlink(file_path)
-               elif os.path.isdir(file_path):
-                  shutil.rmtree(file_path)
-           except Exception as e:
-               print(f"Erreur lors de la suppression du fichier/dossier {file_path}: {e}")
+    covers_directory = initial_covers_directory
+    try:
+        for file_name in os.listdir(covers_directory):
+            file_path = os.path.join(covers_directory, file_name)
+            try:
+                if os.path.isfile(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+            except Exception as e:
+                print(f"Erreur lors de la suppression du fichier/dossier {file_path}: {e}")
 
-   except Exception as e:
-       print(f"Erreur lors de la suppression du contenu du dossier {covers_directory}: {e}")
+    except Exception as e:
+        print(f"Erreur lors de la suppression du contenu du dossier {covers_directory}: {e}")
 
-   with open('Tri/series-films/film.json', 'w', encoding='utf-8') as films_file:
-       json.dump(films_data, films_file, ensure_ascii=False, indent=4)
+    for item in films_data['data']:
+        if 'image' in item:
+            item['image'] = item['image'].replace('Covers/', '')
 
-   with open('Tri/series-films/serie.json', 'w', encoding='utf-8') as series_file:
-       json.dump(series_data, series_file, ensure_ascii=False, indent=4)
+    for item in series_data['data']:
+        if 'image' in item:
+            item['image'] = item['image'].replace('Covers/', '')
+
+    with open('Tri/series-films/film.json', 'w', encoding='utf-8') as films_file:
+        json.dump(films_data, films_file, ensure_ascii=False, indent=4)
+
+    with open('Tri/series-films/serie.json', 'w', encoding='utf-8') as series_file:
+        json.dump(series_data, series_file, ensure_ascii=False, indent=4)
 
 
 def scrape_page(parser, url_template, max_page, page_type):
