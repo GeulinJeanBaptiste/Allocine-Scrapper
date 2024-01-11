@@ -47,23 +47,27 @@ def scroll_to_bottom(driver):
 
 
 def download_and_save_image(url, title):
-    clean_title = re.sub(r'\W+', '', title)
-    image_path = os.path.join("Covers", f"{clean_title}.jpg")
-    
-    if not os.path.exists("Covers"):
-        os.makedirs("Covers")
+   clean_title = re.sub(r'\W+', '', title)
+   base_path = os.path.join("Covers", f"{clean_title}.jpg")
+   
+   if not os.path.exists("Covers"):
+       os.makedirs("Covers")
 
-    if os.path.isfile(image_path):
-        print(f"Film déjà existant dans le dossier : {image_path}")
-        return
+   counter = 1
+   while os.path.isfile(base_path):
+       base_path = os.path.join("Covers", f"{clean_title}_{counter}.jpg")
+       counter += 1
 
-    response = requests.get(url)
-    if response.status_code == 200:
-        with open(image_path, 'wb') as f:
-            f.write(response.content)
-        print(f"Image téléchargée et enregistrée : {image_path}")
-    else:
-        print(f"Échec du téléchargement de l'image pour {title}. Code de statut : {response.status_code}")
+   image_path = base_path
+
+   response = requests.get(url)
+   if response.status_code == 200:
+       with open(image_path, 'wb') as f:
+           f.write(response.content)
+       print(f"Image téléchargée et enregistrée : {image_path}")
+   else:
+       print(f"Échec du téléchargement de l'image pour {title}. Code de statut : {response.status_code}")
+
 
 def url_to_parse(url="") -> BeautifulSoup:
     driver = None
@@ -355,18 +359,17 @@ def load_existing_data(filename="data.json") -> dict:
 
 
 def update_existing_data(existing_data: dict, new_films: list) -> dict:
-    new_films = [new_film for new_film in new_films if new_film['title'] not in [film['title'] for film in existing_data['data']]]
+   new_films = [new_film for new_film in new_films if not any(film['title'] == new_film['title'] and film['length'] == new_film['length'] for film in existing_data['data'])]
 
-    for film in existing_data['data']:
-        if all(value is None or (isinstance(value, list) and len(value) == 0) for value in film.values()):
-            existing_data['data'].remove(film)
-            existing_data['data_number'] -= 1
+   for film in existing_data['data']:
+       if all(value is None or (isinstance(value, list) and len(value) == 0) for value in film.values()):
+           existing_data['data'].remove(film)
+           existing_data['data_number'] -= 1
 
-    existing_data['data'].extend(new_films)
-    existing_data['data_number'] = len(existing_data['data'])
+   existing_data['data'].extend(new_films)
+   existing_data['data_number'] = len(existing_data['data'])
 
-    return existing_data
-
+   return existing_data
 
 def clean_data():
     try:
@@ -611,4 +614,3 @@ if __name__ == "__main__":
             print(f"Erreur dans le fichier JSON dans {data_file_path}. Le fichier peut être vide ou corrompu.")
         except Exception as e:
             pass
-
