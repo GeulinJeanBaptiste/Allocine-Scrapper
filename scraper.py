@@ -355,8 +355,7 @@ def load_existing_data(filename="data.json") -> dict:
 
 
 def update_existing_data(existing_data: dict, new_films: list) -> dict:
-    new_films = [new_film for new_film in new_films if not any(
-        film['title'] == new_film['title'] and film['release_date'] == new_film['release_date'] for film in existing_data['data'])]
+    new_films = [new_film for new_film in new_films if new_film['title'] not in [film['title'] for film in existing_data['data']]]
 
     for film in existing_data['data']:
         if all(value is None or (isinstance(value, list) and len(value) == 0) for value in film.values()):
