@@ -15,6 +15,8 @@ import pandas as pd
 from webdriver_manager.chrome import ChromeDriverManager
 import sys
 import shutil
+from urllib.parse import quote
+
 
 def download_and_extract_chromedriver():
     if not os.path.isfile("chromedriver.exe"):
@@ -43,27 +45,41 @@ def scroll_to_bottom(driver):
 
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     time.sleep(1)
-    
+
+
+def clean_title_from_date(title):
+    cleaned_title = re.sub(r'\([^)]*\)', '', title).strip()
+    return cleaned_title
 
 
 def download_and_save_image(url, title):
     clean_title = re.sub(r'\W+', '', title)
-    image_path = os.path.join("Covers", f"{clean_title}.jpg")
-    
+    base_image_path = os.path.join("Covers", f"{clean_title}.jpg")
+
     if not os.path.exists("Covers"):
         os.makedirs("Covers")
 
-    if os.path.isfile(image_path):
-        print(f"Film déjà existant dans le dossier : {image_path}")
-        return
+    image_path = base_image_path
+    existing_data = load_existing_data()
+
+    same_titles = [item for item in existing_data['data']
+                   if item['title'] == title]
+    if len(same_titles) > 1:
+        counter = 1
+        while os.path.isfile(image_path):
+            image_path = f"{base_image_path[:-4]}_{counter}.jpg"
+            counter += 1
 
     response = requests.get(url)
+
     if response.status_code == 200:
         with open(image_path, 'wb') as f:
             f.write(response.content)
-        print(f"Image téléchargée et enregistrée : {image_path}")
+        print(f"Image dans le dossier : {image_path}")
     else:
-        print(f"Échec du téléchargement de l'image pour {title}. Code de statut : {response.status_code}")
+        print(f"Échec du téléchargement de l'image pour {
+              title}. Code de statut : {response.status_code}")
+
 
 def url_to_parse(url="") -> BeautifulSoup:
     driver = None
@@ -109,8 +125,8 @@ def parse_to_data(soup_list=[], page_type="") -> dict:
 
                         title_element = film_container.find(
                             "h2", {"class": "meta-title"})
-                        film_data["title"] = title_element.text.strip(
-                        ) if title_element else None
+                        film_data["title"] = clean_title_from_date(
+                            title_element.text.strip())
 
                         description_element = film_container.find(
                             "div", {"class": "meta-body-item meta-body-info"})
@@ -170,11 +186,10 @@ def parse_to_data(soup_list=[], page_type="") -> dict:
                 if film_container is not None:
                     try:
                         film_data = {"type": "film"}
-
                         title_element = film_container.find(
                             "h2", {"class": "meta-title"})
-                        film_data["title"] = title_element.text.strip(
-                        ) if title_element else None
+                        film_data["title"] = clean_title_from_date(
+                            title_element.text.strip())
 
                         actors_element = film_container.find(
                             "div", {"class": "meta-body-item meta-body-actor"})
@@ -249,8 +264,8 @@ def parse_to_data(soup_list=[], page_type="") -> dict:
 
                     title_element = film_container.find(
                         "h2", {"class": "meta-title"})
-                    film_data["title"] = title_element.text.strip(
-                    ) if title_element else None
+                    film_data["title"] = clean_title_from_date(
+                        title_element.text.strip())
 
                     actors_element = film_container.find(
                         "div", {"class": "meta-body-item meta-body-actor"})
@@ -343,19 +358,20 @@ def data_to_csv(data: dict = None, filename="data.csv") -> None:
 
 
 def load_existing_data(filename="data.json") -> dict:
-   if os.path.isfile(filename) and os.path.getsize(filename) > 0:
-       with open(filename, 'r', encoding='utf8') as json_file:
-           existing_data = json.load(json_file)
-   else:
-       default_data = {"data_number": 0, "data": []}
-       with open(filename, 'w', encoding='utf8') as json_file:
-           json.dump(default_data, json_file, indent=4)
-       existing_data = default_data
-   return existing_data
+    if os.path.isfile(filename) and os.path.getsize(filename) > 0:
+        with open(filename, 'r', encoding='utf8') as json_file:
+            existing_data = json.load(json_file)
+    else:
+        default_data = {"data_number": 0, "data": []}
+        with open(filename, 'w', encoding='utf8') as json_file:
+            json.dump(default_data, json_file, indent=4)
+        existing_data = default_data
+    return existing_data
 
 
 def update_existing_data(existing_data: dict, new_films: list) -> dict:
-    new_films = [new_film for new_film in new_films if new_film['title'] not in [film['title'] for film in existing_data['data']]]
+    new_films = [new_film for new_film in new_films if new_film['synopsis'] not in [
+        film['synopsis'] for film in existing_data['data']]]
 
     for film in existing_data['data']:
         if all(value is None or (isinstance(value, list) and len(value) == 0) for value in film.values()):
@@ -378,7 +394,8 @@ def clean_data():
             print("Dossier Covers supprimé avec succès.")
     except Exception as e:
         pass
-        
+
+
 def clean_alldata():
     try:
         if os.path.exists("data.json"):
@@ -400,11 +417,9 @@ def clean_alldata():
 
     except Exception as e:
         pass
-        
-        
+
 
 def trier_series_films(data):
-    print("This command is not full developed in the current version.")
     series_data = {"data_number": 0, "data": []}
     films_data = {"data_number": 0, "data": []}
 
@@ -421,12 +436,61 @@ def trier_series_films(data):
         os.makedirs('Tri')
 
     if not os.path.exists('Tri/series-films'):
-        os.makedirs('Tri/series-films')    
+        os.makedirs('Tri/series-films')
 
     if not os.path.exists('Tri/series-films/cover_serie'):
         os.makedirs('Tri/series-films/cover_serie')
     if not os.path.exists('Tri/series-films/cover_film'):
         os.makedirs('Tri/series-films/cover_film')
+
+    for item in data['data']:
+        if 'image' in item:
+            cover_path = os.path.join(
+                'Covers', os.path.basename(item['image']))
+            cover_type = 'cover_serie' if item['type'] == 'serie' else 'cover_film'
+
+            print(f"Déplacement de l'image {
+                  cover_path} vers Tri/series-films/{cover_type}...")
+
+            if os.path.exists(cover_path):
+                destination_directory = os.path.join(
+                    'Tri/series-films', cover_type)
+                if not os.path.exists(destination_directory):
+                    os.makedirs(destination_directory)
+
+                destination_path = os.path.join(
+                    destination_directory, os.path.basename(cover_path))
+
+                try:
+                    if os.path.exists(destination_path):
+                        os.remove(destination_path)
+                        print(f"Image existante supprimée à {
+                              destination_path}")
+
+                    shutil.move(cover_path, destination_path)
+                    print(f"Image déplacée avec succès à {destination_path}")
+
+                except Exception as e:
+                    print(f"Erreur lors du déplacement de l'image : {e}")
+            else:
+                pass
+
+    covers_directory = 'Covers'
+    try:
+        for file_name in os.listdir(covers_directory):
+            file_path = os.path.join(covers_directory, file_name)
+            try:
+                if os.path.isfile(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+            except Exception as e:
+                print(
+                    f"Erreur lors de la suppression du fichier/dossier {file_path}: {e}")
+
+    except Exception as e:
+        print(f"Erreur lors de la suppression du contenu du dossier {
+              covers_directory}: {e}")
 
     with open('Tri/series-films/film.json', 'w', encoding='utf-8') as films_file:
         json.dump(films_data, films_file, ensure_ascii=False, indent=4)
@@ -434,24 +498,7 @@ def trier_series_films(data):
     with open('Tri/series-films/serie.json', 'w', encoding='utf-8') as series_file:
         json.dump(series_data, series_file, ensure_ascii=False, indent=4)
 
-    for item in data['data']:
-        if 'cover' in item and 'url' in item['cover']:
-            cover_url = item['cover']['url']
-            cover_type = 'cover_serie' if item['type'] == 'serie' else 'cover_film'
-            cover_path = os.path.join('Tri/series-films', cover_type, os.path.basename(cover_url))
 
-            print(f"Tentative de téléchargement depuis {cover_url} vers {cover_path}")
-
-            if not os.path.exists(cover_path):
-                response = requests.get(cover_url, stream=True)
-                with open(cover_path, 'wb') as cover_file:
-                    shutil.copyfileobj(response.raw, cover_file)
-                
-                print(f"Image téléchargée avec succès à {cover_path}")
-            else:
-                print(f"L'image existe déjà à {cover_path}")
-
-            
 def scrape_page(parser, url_template, max_page, page_type):
     for i in range(1, max_page + 1):
         url = f"{url_template}{i}"
@@ -476,7 +523,7 @@ def scrape_page(parser, url_template, max_page, page_type):
                 data_to_json(updated_data, output_file)
             else:
                 data_to_json(updated_data, output_file)
-                        
+
 
 def main():
     parser = ConfigParser()
@@ -491,7 +538,7 @@ def main():
             if command == 'clean':
                 clean_data()
                 return
-            
+
             elif command == 'clean-all':
                 clean_alldata()
                 return
@@ -523,6 +570,9 @@ def main():
                 print("- film [genre]: Scrape film pages by genre.")
                 print("- tri: Tri series and films.")
                 print("- help: Show this help message.")
+                print("- serie-all: Scrape all pages of series.")
+                print("- film-all: Scrape all pages of films.")
+                print("-all : Scrape all pages.")
                 print("-------------------------------------")
                 print("List of genres:")
                 print("- cinema: Scrape cinema pages.")
@@ -559,21 +609,105 @@ def main():
                         scrape_page(parser, page_url, max_page, 'serie')
                     else:
                         print(f"Unknown genre. Use one of the following genres: {' '.join(
-                            ['meilleur', 'action', 'animation', 'aventure', 'biopic', 'comedie', 'comedie-dramatique',
+                            ['cinema', 'action', 'animation', 'aventure', 'biopic', 'comedie', 'comedie-dramatique',
                              'drame', 'epouvante-horreur', 'espionnage', 'famille', 'fantastique', 'historique',
                              'judiciaire', 'policier', 'romance', 'science-fiction', 'thriller'])}.")
                         return
                 else:
                     print(f"Unknown genre. Use one of the following genres: {' '.join(
-                        ['meilleur', 'action', 'animation', 'aventure', 'biopic', 'comedie', 'comedie-dramatique',
+                        ['action', 'animation', 'aventure', 'biopic', 'comedie', 'comedie-dramatique',
                          'drame', 'epouvante-horreur', 'espionnage', 'famille', 'fantastique', 'historique',
                          'judiciaire', 'policier', 'romance', 'science-fiction', 'thriller'])}.")
                     return
 
+            elif command == 'serie-all':
+                genres_to_scrape = ['meilleur', 'action', 'animation', 'aventure', 'biopic', 'comedie', 'comedie-dramatique',
+                                    'drame', 'epouvante-horreur', 'espionnage', 'famille', 'fantastique', 'historique',
+                                    'judiciaire', 'policier', 'romance', 'science-fiction', 'thriller']
+                for genre in genres_to_scrape:
+                    page_url_key = f'page_url_serie_{genre}'
+                    max_page_key = f'page_number_serie_{genre}'
+
+                    if page_url_key in parser['Urls'] and max_page_key in parser['Urls']:
+                        page_url = parser['Urls'][page_url_key]
+                        max_page = int(parser['Urls'][max_page_key])
+                        scrape_page(parser, page_url, max_page, 'serie')
+
+                    else:
+                        pass
+
+            elif command == 'film-all':
+                genres_to_scrape = ['cinema', 'action', 'animation', 'aventure', 'biopic', 'comedie', 'comedie-dramatique',
+                                    'drame', 'epouvante-horreur', 'famille', 'fantastique', 'guerre', 'historique',
+                                    'musical', 'policier', 'romance', 'science-fiction', 'thriller', 'western']
+
+                for genre in genres_to_scrape:
+                    page_url_key = f'page_url_film_{genre}'
+                    max_page_key = f'page_number_film_{genre}'
+
+                    if page_url_key in parser['Urls'] and max_page_key in parser['Urls']:
+                        page_url = parser['Urls'][page_url_key]
+                        max_page = int(parser['Urls'][max_page_key])
+                        scrape_page(parser, page_url, max_page, 'action')
+
+                    else:
+                        pass
+
+            elif command == 'all':
+                try:
+                    print("Executing film-all command...")
+                    genres_to_scrape_film = ['cinema', 'action', 'animation', 'aventure',           'biopic', 'comedie', 'comedie-dramatique',
+                                            'drame', 'epouvante-horreur', 'famille', 'fantastique', 'guerre', 'historique',
+                                            'musical', 'policier', 'romance', 'science-fiction', 'thriller', 'western']
+
+                    for genre in genres_to_scrape_film:
+                        page_url_key_film = f'page_url_film_{genre}'
+                        max_page_key_film = f'page_number_film_{genre}'
+
+                        if page_url_key_film in parser['Urls'] and max_page_key_film in parser['Urls']:
+                            page_url_film = parser['Urls'][page_url_key_film]
+                            max_page_film = int(parser['Urls'][max_page_key_film])
+                            scrape_page(parser, page_url_film,
+                                        max_page_film, 'action')
+
+                        else:
+                            pass
+
+                    print("Executing serie-all command...")
+                    genres_to_scrape_serie = ['meilleur', 'action', 'animation', 'aventure', 'biopic', 'comedie', 'comedie-dramatique',
+                                            'drame', 'epouvante-horreur', 'espionnage', 'famille', 'fantastique', 'historique',
+                                            'judiciaire', 'policier', 'romance', 'science-fiction', 'thriller']
+
+                    for genre in genres_to_scrape_serie:
+                        page_url_key_serie = f'page_url_serie_{genre}'
+                        max_page_key_serie = f'page_number_serie_{genre}'
+
+                        if page_url_key_serie in parser['Urls'] and max_page_key_serie in parser['Urls']:
+                            page_url_serie = parser['Urls'][page_url_key_serie]
+                            max_page_serie = int(
+                                parser['Urls'][max_page_key_serie])
+                            scrape_page(parser, page_url_serie,
+                                        max_page_serie, 'serie')
+
+                        else:
+                            pass
+
+                    print("Executing tri command...")
+                    with open('data.json', 'r', encoding='utf-8') as file:
+                        data = json.load(file)
+
+                    trier_series_films(data)
+
+                    print("Executing clean command...")
+                    clean_data()
+
+                except Exception as e:
+                    print(f"An error occurred: {e}")            
+
             elif command == 'film':
                 if len(sys.argv) > 2:
                     genre_to_scrape = sys.argv[2].lower()
-                    if genre_to_scrape in ['action', 'animation', 'aventure', 'biopic', 'comedie', 'comedie-dramatique',
+                    if genre_to_scrape in [ 'cinema','action', 'animation', 'aventure', 'biopic', 'comedie', 'comedie-dramatique',
                                            'drame', 'epouvante-horreur', 'famille', 'fantastique', 'guerre', 'historique',
                                            'musical', 'policier', 'romance', 'science-fiction', 'thriller', 'western']:
                         page_url = parser['Urls'][f'page_url_film_{
@@ -583,15 +717,16 @@ def main():
                         scrape_page(parser, page_url, max_page, 'action')
                     else:
                         print(f"Unknown genre. Use one of the following genres: {' '.join(
-                            ['action', 'animation', 'aventure', 'biopic', 'comedie', 'comedie-dramatique', 'drame', 'epouvante-horreur', 'famille', 'fantastique', 'guerre', 'historique', 'musical', 'policier', 'romance', 'science-fiction', 'thriller', 'western'])}.")
+                            ['cinema','action', 'animation', 'aventure', 'biopic', 'comedie', 'comedie-dramatique', 'drame', 'epouvante-horreur', 'famille', 'fantastique', 'guerre', 'historique', 'musical', 'policier', 'romance', 'science-fiction', 'thriller', 'western'])}.")
                         return
                 else:
                     print(f"Unknown genre. Use one of the following genres: {' '.join(
-                        ['action', 'animation', 'aventure', 'biopic', 'comedie', 'comedie-dramatique', 'drame', 'epouvante-horreur', 'famille', 'fantastique', 'guerre', 'historique', 'musical', 'policier', 'romance', 'science-fiction', 'thriller', 'western'])}.")
+                        ['cinema','action', 'animation', 'aventure', 'biopic', 'comedie', 'comedie-dramatique', 'drame', 'epouvante-horreur', 'famille', 'fantastique', 'guerre', 'historique', 'musical', 'policier', 'romance', 'science-fiction', 'thriller', 'western'])}.")
                     return
 
     except Exception as e:
         pass
+
 
 if __name__ == "__main__":
     main()
@@ -608,7 +743,7 @@ if __name__ == "__main__":
         except FileNotFoundError:
             print(f"Le fichier {data_file_path} n'a pas été trouvé.")
         except json.decoder.JSONDecodeError:
-            print(f"Erreur dans le fichier JSON dans {data_file_path}. Le fichier peut être vide ou corrompu.")
+            print(f"Erreur dans le fichier JSON dans {
+                  data_file_path}. Le fichier peut être vide ou corrompu.")
         except Exception as e:
             pass
-
