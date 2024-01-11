@@ -81,6 +81,7 @@ def download_and_save_image(url, title):
               title}. Code de statut : {response.status_code}")
 
 
+
 def url_to_parse(url="") -> BeautifulSoup:
     driver = None
 
