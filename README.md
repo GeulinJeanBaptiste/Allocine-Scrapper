@@ -99,6 +99,33 @@ Utilisez la commande suivante dans le terminal :
 python scraper.py film [genre]
 ```
 
+## Serie-all
+
+La commande `serie-all` permet de scraper toutes les pages des séries pour chaque genre spécifié.
+
+Utilisez la commande suivante dans le terminal :
+
+```bash
+python script.py serie-all
+```
+
+## Film-all
+
+La commande film-all permet de scraper toutes les pages des films pour chaque genre spécifié.
+
+Utilisez la commande suivante dans le terminal :
+```bash
+python script.py film-all
+```
+
+## All
+
+La commande all permet de scraper toutes les pages, à la fois des séries et des films, pour chaque genre spécifié.
+
+bash
+
+python script.py all
+
 ### Tri :
 
 Cette commmande tri tout les films/séries dans le fichier data.json et le met séparement dans un fichier film.json et serie.json dans un dossier Tri
