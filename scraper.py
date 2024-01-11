@@ -16,7 +16,6 @@ from webdriver_manager.chrome import ChromeDriverManager
 import sys
 import shutil
 
-
 def download_and_extract_chromedriver():
     if not os.path.isfile("chromedriver.exe"):
         print("Téléchargement du pilote ChromeDriver...")
@@ -44,33 +43,34 @@ def scroll_to_bottom(driver):
 
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     time.sleep(1)
+    
 
 
 def download_and_save_image(url, title):
- global seen_titles
- clean_title = re.sub(r'\W+', '', title)
- image_path = os.path.join("Covers", f"{clean_title}.jpg")
+   clean_title = re.sub(r'\W+', '', title)
+   base_image_path = os.path.join("Covers", f"{clean_title}.jpg")
 
- if not os.path.exists("Covers"):
-     os.makedirs("Covers")
+   if not os.path.exists("Covers"):
+       os.makedirs("Covers")
 
- counter = 1
- while os.path.isfile(image_path):
-     if title in seen_titles:
-         image_path = os.path.join("Covers", f"{clean_title}_{counter}.jpg")
-         counter += 1
-     else:
-         break
+   image_path = base_image_path
+   existing_data = load_existing_data()
 
- response = requests.get(url)
- if response.status_code == 200:
-     with open(image_path, 'wb') as f:
-         f.write(response.content)
-     print(f"Image téléchargée et enregistrée : {image_path}")
-     seen_titles.add(title)
- else:
-     print(f"Échec du téléchargement de l'image pour {title}. Code de statut : {response.status_code}")
+   same_titles = [item for item in existing_data['data'] if item['title'] == title]
+   if len(same_titles) > 1:
+       counter = 1
+       while os.path.isfile(image_path):
+           image_path = f"{base_image_path[:-4]}_{counter}.jpg"
+           counter += 1
 
+   response = requests.get(url)
+   
+   if response.status_code == 200:
+       with open(image_path, 'wb') as f:
+           f.write(response.content)
+       print(f"Image dans le dossier : {image_path}")
+   else:
+       print(f"Échec du téléchargement de l'image pour {title}. Code de statut : {response.status_code}")
 
 
 def url_to_parse(url="") -> BeautifulSoup:
@@ -351,20 +351,19 @@ def data_to_csv(data: dict = None, filename="data.csv") -> None:
 
 
 def load_existing_data(filename="data.json") -> dict:
-    if os.path.isfile(filename) and os.path.getsize(filename) > 0:
-        with open(filename, 'r', encoding='utf8') as json_file:
-            existing_data = json.load(json_file)
-    else:
-        default_data = {"data_number": 0, "data": []}
-        with open(filename, 'w', encoding='utf8') as json_file:
-            json.dump(default_data, json_file, indent=4)
-        existing_data = default_data
-    return existing_data
+   if os.path.isfile(filename) and os.path.getsize(filename) > 0:
+       with open(filename, 'r', encoding='utf8') as json_file:
+           existing_data = json.load(json_file)
+   else:
+       default_data = {"data_number": 0, "data": []}
+       with open(filename, 'w', encoding='utf8') as json_file:
+           json.dump(default_data, json_file, indent=4)
+       existing_data = default_data
+   return existing_data
 
 
 def update_existing_data(existing_data: dict, new_films: list) -> dict:
-    new_films = [new_film for new_film in new_films if not any(
-        film['title'] == new_film['title'] and film['length'] == new_film['length'] for film in existing_data['data'])]
+    new_films = [new_film for new_film in new_films if new_film['synopsis'] not in [film['synopsis'] for film in existing_data['data']]]
 
     for film in existing_data['data']:
         if all(value is None or (isinstance(value, list) and len(value) == 0) for value in film.values()):
@@ -387,8 +386,7 @@ def clean_data():
             print("Dossier Covers supprimé avec succès.")
     except Exception as e:
         pass
-
-
+        
 def clean_alldata():
     try:
         if os.path.exists("data.json"):
@@ -410,7 +408,8 @@ def clean_alldata():
 
     except Exception as e:
         pass
-
+        
+        
 
 def trier_series_films(data):
     print("This command is not full developed in the current version.")
@@ -430,7 +429,7 @@ def trier_series_films(data):
         os.makedirs('Tri')
 
     if not os.path.exists('Tri/series-films'):
-        os.makedirs('Tri/series-films')
+        os.makedirs('Tri/series-films')    
 
     if not os.path.exists('Tri/series-films/cover_serie'):
         os.makedirs('Tri/series-films/cover_serie')
@@ -447,22 +446,20 @@ def trier_series_films(data):
         if 'cover' in item and 'url' in item['cover']:
             cover_url = item['cover']['url']
             cover_type = 'cover_serie' if item['type'] == 'serie' else 'cover_film'
-            cover_path = os.path.join(
-                'Tri/series-films', cover_type, os.path.basename(cover_url))
+            cover_path = os.path.join('Tri/series-films', cover_type, os.path.basename(cover_url))
 
-            print(f"Tentative de téléchargement depuis {
-                  cover_url} vers {cover_path}")
+            print(f"Tentative de téléchargement depuis {cover_url} vers {cover_path}")
 
             if not os.path.exists(cover_path):
                 response = requests.get(cover_url, stream=True)
                 with open(cover_path, 'wb') as cover_file:
                     shutil.copyfileobj(response.raw, cover_file)
-
+                
                 print(f"Image téléchargée avec succès à {cover_path}")
             else:
                 print(f"L'image existe déjà à {cover_path}")
 
-
+            
 def scrape_page(parser, url_template, max_page, page_type):
     for i in range(1, max_page + 1):
         url = f"{url_template}{i}"
@@ -487,7 +484,7 @@ def scrape_page(parser, url_template, max_page, page_type):
                 data_to_json(updated_data, output_file)
             else:
                 data_to_json(updated_data, output_file)
-
+                        
 
 def main():
     parser = ConfigParser()
@@ -502,7 +499,7 @@ def main():
             if command == 'clean':
                 clean_data()
                 return
-
+            
             elif command == 'clean-all':
                 clean_alldata()
                 return
@@ -529,8 +526,7 @@ def main():
             elif command == 'help':
                 print("List of commands:")
                 print("- clean: Clean data.json and the Covers folder.")
-                print(
-                    "- clean-all: Clean data.json, the Covers folder and the Tri folder.")
+                print("- clean-all: Clean data.json, the Covers folder and the Tri folder.")
                 print("- serie [genre]: Scrape series pages by genre.")
                 print("- film [genre]: Scrape film pages by genre.")
                 print("- tri: Tri series and films.")
@@ -605,7 +601,6 @@ def main():
     except Exception as e:
         pass
 
-
 if __name__ == "__main__":
     main()
     if len(sys.argv) > 1 and sys.argv[1].lower() == 'tri':
@@ -621,7 +616,6 @@ if __name__ == "__main__":
         except FileNotFoundError:
             print(f"Le fichier {data_file_path} n'a pas été trouvé.")
         except json.decoder.JSONDecodeError:
-            print(f"Erreur dans le fichier JSON dans {
-                  data_file_path}. Le fichier peut être vide ou corrompu.")
+            print(f"Erreur dans le fichier JSON dans {data_file_path}. Le fichier peut être vide ou corrompu.")
         except Exception as e:
             pass
