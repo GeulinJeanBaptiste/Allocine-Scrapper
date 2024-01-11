@@ -198,9 +198,9 @@ python script.py film-all
 
 La commande all permet de scraper toutes les pages, à la fois des séries et des films, pour chaque genre spécifié.
 
-bash
-
+```bash
 python script.py all
+```
 
 ### Tri :
 
