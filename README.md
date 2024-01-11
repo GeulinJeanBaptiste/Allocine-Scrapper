@@ -25,8 +25,27 @@ Avant d'exécuter le script, assurez-vous d'avoir les éléments suivants instal
 
 2.  Vous pouvez également ajouter manuellement Python au PATH en ajoutant ces deux variables d'environnement dans votre système si vous n'avez pas cocher la case "Add Python to PATH" :
 
-   - `C:\Users\{user}\AppData\Local\Programs\Python\Python312\`
-   - `C:\Users\{user}\AppData\Local\Programs\Python\Python312\Scripts\`
+- Sur Windows : 
+
+    ```
+    C:\Users\{user}\AppData\Local\Programs\Python\Python312\
+    ```
+    ```
+    C:\Users\{user}\AppData\Local\Programs\Python\Python312\Scripts\
+    ```
+
+- Sur Macos / Linux : 
+
+    Pour le chemin du binaire Python :
+    ```bash
+    export PATH="/chemin/vers/python3.x/bin:$PATH"
+    ```
+
+    Pour le chemin du dossier "Scripts" qui contient pip :
+
+    ```bash
+    export PATH="/chemin/vers/python3.x/bin/Scripts:$PATH"
+    ```
 
 Vous pouvez vérifier si Python est installé en exécutant la commande suivante dans votre terminal :
 
@@ -34,23 +53,73 @@ Vous pouvez vérifier si Python est installé en exécutant la commande suivante
 python --version
 ```
 
+Sur macOS/Linux, la commande peut être :
+
+```bash
+python3 --version
+```
+
 **Gestionnaire de paquets pip :** Pip est généralement inclus avec l'installation de Python. Vous pouvez vérifier s'il est installé en exécutant la commande suivante dans votre terminal :
 
+
+- Sur Windows : 
 ```bash
 pip --version
 ```
 
+- Sur macOS/Linux, la commande peut être :
+
+```
+pip3 --version
+```
+
 Si pip n'est pas installé, vous pouvez suivre les instructions [ici](https://pip.pypa.io/en/stable/installation/) pour l'installer.
+
+## Environnement Virtuel
+
+Pour exécuter ce projet dans un environnement virtuel, suivez ces étapes :
+
+1. **Créer l'environnement virtuel :**
+   Utilisez la commande suivante pour créer un environnement virtuel. Assurez-vous d'avoir installé `virtualenv` au préalable.
+
+   - Sur Windows :
+     ```bash
+     python -m venv venv
+     ```
+
+   - Sur macOS/Linux :
+     ```bash
+     python3 -m venv venv
+     ```
+
+2. **Activer l'environnement virtuel :**
+   - Sur Windows :
+     ```bash
+     .\venv\Scripts\activate
+     ```
+
+   - Sur macOS/Linux :
+     ```bash
+     source venv/bin/activate
+     ```
+
+   Vous verrez le nom de votre environnement virtuel apparaître dans le terminal, indiquant qu'il est activé.
 
 
 ## Installation les dépendances
 
-Après avoir installé Python et pip, vous pouvez installer les dépendances nécessaires en utilisant le fichier **requirements.txt** fourni. Exécutez la commande suivante dans le répertoire du projet :
+Après avoir installé Python, pip et avoir mit en place l'environnement virtuel, vous pouvez installer les dépendances nécessaires en utilisant le fichier **requirements.txt** fourni. Exécutez la commande suivante dans le répertoire du projet :
+
+- Sur Windows :
 
 ```bash
+pip install -r requirements.txt
+```
 
-pip install -r requirement.txt
+- Sur macOS/Linux, vous pouvez utiliser la commande suivante :
 
+```bash
+pip3 install -r requirements.txt
 ```
 
 Cette commande installera toutes les bibliothèques Python nécessaires pour exécuter le script.
